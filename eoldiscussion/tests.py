@@ -1,21 +1,25 @@
 """ Tests for EolDiscussionXBlock"""
-
-
-import itertools
-import random
-import string
+# Python Standard Libraries
 from collections import namedtuple
 from unittest import TestCase
+import itertools
 import json
+import random
+import string
+
+# Installed packages (via pip)
+from safe_lxml import etree
+from six.moves import range
 import ddt
 import mock
-from six.moves import range
+
+# Edx dependencies
 from xblock.field_data import DictFieldData
 from xblock.fields import NO_CACHE_VALUE, UNIQUE_ID, ScopeIds
 from xblock.runtime import Runtime
 
+# Internal project dependencies
 from eoldiscussion import EolDiscussionXBlock
-from safe_lxml import etree
 
 class TestRequest(object):
     # pylint: disable=too-few-public-methods
