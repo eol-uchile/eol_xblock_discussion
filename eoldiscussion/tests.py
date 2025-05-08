@@ -1,22 +1,34 @@
 """ Tests for EolDiscussionXBlock"""
-
-
-import itertools
-import random
-import string
+# Python Standard Libraries
 from collections import namedtuple
 from unittest import TestCase
+import itertools
+import json
+import random
+import string
 
+# Installed packages (via pip)
+from safe_lxml import etree
+from six.moves import range
 import ddt
 import mock
-from six.moves import range
+
+# Edx dependencies
 from xblock.field_data import DictFieldData
 from xblock.fields import NO_CACHE_VALUE, UNIQUE_ID, ScopeIds
 from xblock.runtime import Runtime
 
+# Internal project dependencies
 from eoldiscussion import EolDiscussionXBlock
-from safe_lxml import etree
 
+class TestRequest(object):
+    # pylint: disable=too-few-public-methods
+    """
+    Module helper for @json_handler
+    """
+    method = None
+    body = None
+    success = None
 
 def attribute_pair_repr(self):
     """
@@ -72,6 +84,7 @@ class EolDiscussionXBlockImportExportTests(TestCase):
         self.runtime_mock.construct_xblock_from_class = mock.Mock(side_effect=self._construct_xblock_mock)
         self.runtime_mock.get_policy = mock.Mock(return_value={})
         self.id_gen_mock = mock.Mock()
+        self.xblock = EolDiscussionXBlock(self.runtime_mock, scope_ids=self.keys, field_data=DictFieldData({}))
 
     def _construct_xblock_mock(self, cls, keys):  # pylint: disable=unused-argument
         """
@@ -105,13 +118,11 @@ class EolDiscussionXBlockImportExportTests(TestCase):
         patched_load_definition_xml.side_effect = Exception("Irrelevant")
 
         block = EolDiscussionXBlock.parse_xml(node, self.runtime_mock, self.keys, self.id_gen_mock)
-        try:
-            self.assertEqual(block.discussion_id, id_pair.value)
-            self.assertEqual(block.discussion_category, category_pair.value)
-            self.assertEqual(block.discussion_target, target_pair.value)
-        except AssertionError:
-            print(xblock_xml)
-            raise
+
+        self.assertEqual(block.discussion_id, id_pair.value)
+        self.assertEqual(block.discussion_category, category_pair.value)
+        self.assertEqual(block.discussion_target, target_pair.value)
+
 
     @mock.patch(DISCUSSION_XBLOCK_LOCATION + ".load_definition_xml")
     @ddt.unpack
@@ -137,13 +148,10 @@ class EolDiscussionXBlockImportExportTests(TestCase):
         patched_load_definition_xml.return_value = (definition_node, "irrelevant")
 
         block = EolDiscussionXBlock.parse_xml(node, self.runtime_mock, self.keys, self.id_gen_mock)
-        try:
-            self.assertEqual(block.discussion_id, id_pair.value)
-            self.assertEqual(block.discussion_category, category_pair.value)
-            self.assertEqual(block.discussion_target, target_pair.value)
-        except AssertionError:
-            print(xblock_xml, xblock_definition_xml)
-            raise
+       
+        self.assertEqual(block.discussion_id, id_pair.value)
+        self.assertEqual(block.discussion_category, category_pair.value)
+        self.assertEqual(block.discussion_target, target_pair.value)
 
     def test_export_default_discussion_id(self):
         """
@@ -189,3 +197,164 @@ class EolDiscussionXBlockImportExportTests(TestCase):
         block.add_xml_to_node(target_node)
         self.assertEqual(target_node.tag, "discussion")
         self.assertTrue(target_node.attrib["discussion_id"], discussion_id)
+
+    def test_submit_studio_edits_not_all_parameters(self):
+        """
+            Verify submit studio edits is working
+        """
+        request = TestRequest()
+        request.method = 'POST'
+        data = json.dumps({
+            'display_name':'',
+            'discussion_category':'',
+            'discussion_target':'',
+            'limit_character':'',
+            'is_dated':''
+        })
+        
+        request.body = data.encode()
+        response = self.xblock.submit_studio_edits(request)
+        data = json.loads(response._app_iter[0].decode())
+        self.assertEqual(data['error'], 'Error con los parámetros.')
+  
+    def test_submit_studio_edits_limit_character_is_not_a_number(self):
+        """
+            Verify submit studio edits is working
+        """
+        request = TestRequest()
+        request.method = 'POST'
+        data = json.dumps({
+            'display_name':'test_name',
+            'discussion_category':'test_category',
+            'discussion_target':'test_target',
+            'limit_character':'aaaaa',
+            'is_dated': True
+        })
+        
+        request.body = data.encode()
+        response = self.xblock.submit_studio_edits(request)
+        data = json.loads(response._app_iter[0].decode())
+        self.assertEqual(data['error'], 'El limite de caracteres debe ser un entero.')
+    
+    def test_submit_studio_edits_is_dated_False(self):
+        """
+            Verify submit studio edits is working
+        """
+        request = TestRequest()
+        request.method = 'POST'
+        data = json.dumps({
+            'display_name':'test_name',
+            'discussion_category': 'test_category',
+            'discussion_target': 'test_target',
+            'limit_character': 1200,
+            'is_dated': False
+        })
+        
+        request.body = data.encode()
+        response = self.xblock.submit_studio_edits(request)
+        data = json.loads(response._app_iter[0].decode())
+        self.assertTrue(data)
+    
+    def test_submit_studio_edits_is_dated_True(self):
+        """
+            Verify submit studio edits is working
+        """
+        request = TestRequest()
+        request.method = 'POST'
+        data = json.dumps({
+            'display_name':'test_name',
+            'discussion_category': 'test_category',
+            'discussion_target': 'test_target',
+            'limit_character': 1200,
+            'is_dated': True
+        })
+        
+        request.body = data.encode()
+        response = self.xblock.submit_studio_edits(request)
+        data = json.loads(response._app_iter[0].decode())
+        self.assertEqual(data['error'], 'Falta definir las fechas del foro.')
+    
+    def test_submit_studio_edits_wrong_date_format(self):
+        """
+            Verify submit studio edits is working
+        """
+        request = TestRequest()
+        request.method = 'POST'
+        data = json.dumps({
+            'display_name':'test_name',
+            'discussion_category': 'test_category',
+            'discussion_target': 'test_target',
+            'limit_character': 1200,
+            'is_dated': True,
+            'start_date':'2020-01-02',
+            'end_date':'2020-01-02',
+        })
+        
+        request.body = data.encode()
+        response = self.xblock.submit_studio_edits(request)
+        data = json.loads(response._app_iter[0].decode())
+        self.assertEqual(data['error'], 'Error con los formatos en las fechas del foro.')
+    
+    def test_submit_studio_edits_end_date_must_be_grader_than_start_date(self):
+        """
+            Verify submit studio edits is working
+        """
+        request = TestRequest()
+        request.method = 'POST'
+        data = json.dumps({
+            'display_name':'test_name',
+            'discussion_category': 'test_category',
+            'discussion_target': 'test_target',
+            'limit_character': 1200,
+            'is_dated': True,
+            'start_date':'2025-04-28T14:30',
+            'end_date':'2025-03-28T14:30',
+        })
+        
+        request.body = data.encode()
+        response = self.xblock.submit_studio_edits(request)
+        data = json.loads(response._app_iter[0].decode())
+        self.assertEqual(data['error'], 'La fecha de cierre debe ser mayor a la fecha de inicio del foro.')
+    
+    def test_submit_studio_edits(self):
+        """
+            Verify submit studio edits is working properly
+        """
+        request = TestRequest()
+        request.method = 'POST'
+        data = json.dumps({
+            'display_name':'test_name',
+            'discussion_category': 'test_category',
+            'discussion_target': 'test_target',
+            'limit_character': 1200,
+            'is_dated': True,
+            'start_date':'2025-03-28T14:30',
+            'end_date':'2025-04-28T14:30',
+        })
+        
+        request.body = data.encode()
+        response = self.xblock.submit_studio_edits(request)
+        data = json.loads(response._app_iter[0].decode())
+        self.assertEqual(data['result'], 'success')
+
+    def test_student_view_data(self):
+        """
+        Test the student_view_data() method.
+        """
+        response = self.xblock.student_view_data()
+        self.assertEqual(response['topic_id'], self.xblock.discussion_id)
+
+    def test_studio_view_render(self,):
+        """
+            Check if xblock studio template loaded correctly
+        """
+        studio_view = self.xblock.studio_view(None)
+        studio_view_html = studio_view.content
+        self.assertIn('id="settings-tab"', studio_view_html)
+
+    def test_course_key_property(self):
+        """
+            Test course_key property
+        """
+        response = self.xblock.course_key
+        self.assertIsNone(response)
