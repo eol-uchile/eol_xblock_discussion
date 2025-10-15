@@ -252,6 +252,7 @@ class EolDiscussionXBlock(XBlock, StudioEditableXBlockMixin, XmlParserMixin):
             'icon1_url': self.runtime.local_resource_url(self,"static/images/icono-01.png"),
             'icon2_url': self.runtime.local_resource_url(self,"static/images/icono-02.png"),
             'icon3_url': self.runtime.local_resource_url(self,"static/images/icono-03.png"),
+            'pencil_icon_black_url': self.runtime.local_resource_url(self,"static/images/pencil_icon_black.png"),
             'started': '',
             'finished': ''
         }
