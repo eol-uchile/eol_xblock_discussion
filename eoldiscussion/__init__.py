@@ -24,7 +24,6 @@ from xblock.exceptions import JsonHandlerError
 from xblock.fields import Scope, String, UNIQUE_ID, Integer, Boolean
 from xblockutils.resources import ResourceLoader
 from xblockutils.studio_editable import StudioEditableXBlockMixin
-from xmodule.raw_module import RawDescriptor
 from xmodule.xml_module import XmlParserMixin
 
 log = logging.getLogger(__name__)
@@ -100,7 +99,7 @@ class EolDiscussionXBlock(XBlock, StudioEditableXBlockMixin, XmlParserMixin):
     has_author_view = True  # Tells Studio to use author_view
 
     # support for legacy OLX format - consumed by XmlParserMixin.load_metadata
-    metadata_translations = dict(RawDescriptor.metadata_translations)
+    metadata_translations = dict(XmlParserMixin.metadata_translations)
     metadata_translations['id'] = 'discussion_id'
     metadata_translations['for'] = 'discussion_target'
 
