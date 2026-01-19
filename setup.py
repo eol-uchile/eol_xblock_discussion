@@ -24,7 +24,7 @@ def package_data(pkg, roots):
 
 setup(
     name='eoldiscussion-xblock',
-    version='1.0.1',
+    version='1.1.0',
     description='EOL Discussion Xblock',
     author="Oficina EOL UChile",
     author_email="eol-ing@uchile.cl",
@@ -37,5 +37,5 @@ setup(
             'eoldiscussion = eoldiscussion:EolDiscussionXBlock',
         ],
     },
-    package_data={"eoldiscussion": ["*.html","*.underscore"]}
+    package_data = {"eoldiscussion": ["static/**/*"]}
 )
