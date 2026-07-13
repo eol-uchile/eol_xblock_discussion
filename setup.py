@@ -23,8 +23,8 @@ def package_data(pkg, roots):
 
 
 setup(
-    name='eoldiscussion-xblock',
-    version='1.3.1',
+    name='eoldiscussion',
+    version='1.4.0',
     description='EOL Discussion Xblock',
     author="Oficina EOL UChile",
     author_email="eol-ing@uchile.cl",
@@ -36,6 +36,11 @@ setup(
         'xblock.v1': [
             'eoldiscussion = eoldiscussion:EolDiscussionXBlock',
         ],
-    },
-    package_data = {"eoldiscussion": ["static/**/*"]}
+        "lms.djangoapp": [
+            "eoldiscussion = eoldiscussion.apps:ImgAnnotationConfig",
+        ],
+        "cms.djangoapp": [
+            "eoldiscussion = eoldiscussion.apps:ImgAnnotationConfig",
+        ],
+    }
 )
